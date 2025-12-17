@@ -2,122 +2,114 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../../constants/theme';
-import * as ImagePicker from 'expo-image-picker';
-import { useAuth } from '@/contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import { getUserProfile, createUserProfile, ensureUserProfileExists } from '@/services/firestore';
-import { uploadUri } from '@/services/storage';
+import { getProfile } from '../../storage/profileStorage';
 
 export default function ProfileScreen() {
-  const { user } = useAuth();
   const navigation = useNavigation();
   const [profile, setProfile] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-    async function load() {
-      if (!user) return;
-      try {
-        const p = await getUserProfile(user.uid);
-        if (p) {
-          if (mounted) setProfile(p);
-          return;
-        }
-        // seed a lightweight profile for quick testing
-        const defaults = { name: user.email ? user.email.split('@')[0] : 'Usuário' };
-        const seeded = await ensureUserProfileExists(user.uid, defaults);
-        if (mounted) setProfile(seeded);
-      } catch (e) {
-        console.warn('Failed to load profile', e);
-      }
-    }
-
-    load();
-
-    const unsub = navigation.addListener('focus', () => {
-      load();
-    });
-
-    return () => { mounted = false; unsub(); };
-  }, [user]);
-
-  const pickAvatar = async () => {
+  const loadProfile = async () => {
+    setLoading(true);
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permissão necessária', 'Permissão de acesso à galeria é necessária para selecionar imagens.');
-        return;
-      }
-      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaType.Images, quality: 0.8 });
-      if (!res.cancelled) {
-      const previous = profile?.avatar || null;
-      // optimistic preview
-      setProfile(prev => ({ ...prev, avatar: res.uri }));
-      setUploading(true);
-      try {
-        const url = await uploadUri(`avatars/${user.uid}/${Date.now()}.jpg`, res.uri, (progress) => {
-          // optional: could set UI progress state
-        });
-        await createUserProfile(user.uid, { avatar: url });
-        setProfile(prev => ({ ...prev, avatar: url }));
-      } catch (e) {
-        console.warn('Upload failed', e);
-        Alert.alert('Erro', 'Falha ao enviar imagem. ' + (e?.message || 'Tente novamente.'));
-        // revert optimistic preview
-        setProfile(prev => ({ ...prev, avatar: previous }));
-      } finally {
-        setUploading(false);
-      }
-      }
+      const data = await getProfile();
+      setProfile(data || { name: 'Usuário', photoUri: null });
     } catch (e) {
-      console.warn('pickAvatar failed', e);
-      Alert.alert('Erro', 'Não foi possível abrir a galeria. ' + (e?.message || ''));
+      console.warn('Erro ao carregar perfil:', e);
+      setProfile({ name: 'Usuário', photoUri: null });
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadProfile();
+
+    // Recarrega quando voltar para a tela
+    const unsub = navigation.addListener('focus', loadProfile);
+    return unsub;
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
       <Text style={styles.header}>Meu perfil</Text>
 
+      {/* Card do Perfil - Melhorado */}
       <View style={styles.profileCard}>
-        <TouchableOpacity onPress={pickAvatar}>
-          {profile?.avatar ? (
-            <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+        <TouchableOpacity 
+          style={styles.avatarContainer}
+          onPress={() => navigation.navigate('EditProfile')}
+          activeOpacity={0.7}
+        >
+          {profile?.photoUri ? (
+            <Image source={{ uri: profile.photoUri }} style={styles.avatar} />
           ) : (
-            <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center' }]}>
-              <Ionicons name="person" size={40} color="#777" />
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Ionicons name="person" size={48} color="#999" />
             </View>
           )}
-          {uploading ? (
-            <View style={styles.uploadOverlay}>
-              <ActivityIndicator color="white" />
-            </View>
-          ) : null}
+          <View style={styles.editIconBadge}>
+            <Ionicons name="camera" size={16} color="white" />
+          </View>
         </TouchableOpacity>
-        <Text style={styles.name}>{profile?.name || 'Seu nome'}</Text>
-        <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
-          <Text style={{ fontSize: 12 }}>Editar</Text>
+        
+        <Text style={styles.name}>{profile?.name || 'Usuário'}</Text>
+        <Text style={styles.hint}>Toque na foto para editar perfil</Text>
+        
+        <TouchableOpacity 
+          style={styles.editBtn} 
+          onPress={() => navigation.navigate('EditProfile')}
+        >
+          <Ionicons name="pencil" size={14} color="#666" />
+          <Text style={styles.editBtnText}>Editar</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.menuItem}>
+      {/* Conquistas - Estado vazio melhorado */}
+      <View style={styles.menuItem}>
         <Text style={styles.menuTitle}>Conquistas</Text>
-        <Text style={{ color: COLORS.textSecondary }}>Nenhuma conquista</Text>
-      </TouchableOpacity>
-
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Resumo semanal</Text>
-        <Text style={styles.summaryDate}>17 - 23 de dezembro</Text>
-
-        <View style={styles.row}>
-          <Text>Tempo ativo médio</Text>
-          <Text style={{ fontWeight: 'bold' }}>48min</Text>
+        <View style={styles.emptyState}>
+          <Ionicons name="trophy-outline" size={32} color="#ccc" />
+          <Text style={styles.emptyText}>Nenhuma conquista ainda</Text>
+          <Text style={styles.emptyHint}>Complete desafios para ganhar troféus</Text>
         </View>
-        <View style={styles.divider} />
+      </View>
+
+      {/* Resumo Semanal */}
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryHeader}>
+          <View>
+            <Text style={styles.summaryTitle}>Resumo semanal</Text>
+            <Text style={styles.summaryDate}>17 - 23 de dezembro</Text>
+          </View>
+          <Ionicons name="calendar-outline" size={24} color={COLORS.primary} />
+        </View>
+
         <View style={styles.row}>
-          <Text>Média de sono</Text>
-          <Text style={{ fontWeight: 'bold' }}>8h</Text>
+          <View style={styles.rowLeft}>
+            <Ionicons name="time-outline" size={20} color={COLORS.primary} />
+            <Text style={styles.rowLabel}>Tempo ativo médio</Text>
+          </View>
+          <Text style={styles.rowValue}>48min</Text>
+        </View>
+        
+        <View style={styles.divider} />
+        
+        <View style={styles.row}>
+          <View style={styles.rowLeft}>
+            <Ionicons name="moon-outline" size={20} color={COLORS.primary} />
+            <Text style={styles.rowLabel}>Média de sono</Text>
+          </View>
+          <Text style={styles.rowValue}>8h</Text>
         </View>
       </View>
     </ScrollView>
@@ -125,18 +117,153 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, paddingTop: 50 },
-  header: { fontSize: 24, fontWeight: 'bold', paddingHorizontal: SIZES.padding, marginBottom: 20 },
-  profileCard: { marginHorizontal: SIZES.padding, backgroundColor: 'white', borderRadius: 20, padding: 20, alignItems: 'center', marginBottom: 20 },
-  avatar: { width: 120, height: 120, borderRadius: 60, marginBottom: 10, backgroundColor: '#eee' },
-  name: { fontSize: 20, fontWeight: 'bold' },
-  editBtn: { position: 'absolute', right: 20, top: 20, backgroundColor: '#eee', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15 },
-  menuItem: { marginHorizontal: SIZES.padding, backgroundColor: 'white', padding: 20, borderRadius: 15, marginBottom: 20 },
-  menuTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 5 },
-  summaryCard: { marginHorizontal: SIZES.padding, backgroundColor: 'white', padding: 20, borderRadius: 15 },
-  summaryTitle: { fontWeight: 'bold', fontSize: 16 },
-  summaryDate: { color: COLORS.textSecondary, marginBottom: 20, fontSize: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
-  divider: { height: 1, backgroundColor: '#eee', marginVertical: 5 }
-  ,uploadOverlay: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', borderRadius: 60 }
+  container: { 
+    flex: 1, 
+    backgroundColor: COLORS.background, 
+    paddingTop: 50 
+  },
+  header: { 
+    fontSize: 26, 
+    fontWeight: 'bold', 
+    paddingHorizontal: SIZES.padding, 
+    marginBottom: 24 
+  },
+  profileCard: { 
+    marginHorizontal: SIZES.padding, 
+    backgroundColor: 'white', 
+    borderRadius: 20, 
+    padding: 24, 
+    alignItems: 'center', 
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+  avatar: { 
+    width: 100, 
+    height: 100, 
+    borderRadius: 50, 
+    marginBottom: 12,
+  },
+  avatarPlaceholder: {
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editIconBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 12,
+    backgroundColor: COLORS.primary,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'white',
+  },
+  name: { 
+    fontSize: 22, 
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  hint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 16,
+  },
+  editBtn: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#f5f5f5', 
+    paddingHorizontal: 16, 
+    paddingVertical: 8, 
+    borderRadius: 20,
+  },
+  editBtnText: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
+  },
+  menuItem: { 
+    marginHorizontal: SIZES.padding, 
+    backgroundColor: 'white', 
+    padding: 20, 
+    borderRadius: 15, 
+    marginBottom: 20,
+    elevation: 1,
+  },
+  menuTitle: { 
+    fontWeight: 'bold', 
+    fontSize: 17, 
+    marginBottom: 12,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+  },
+  emptyHint: {
+    fontSize: 12,
+    color: '#ccc',
+    marginTop: 4,
+  },
+  summaryCard: { 
+    marginHorizontal: SIZES.padding, 
+    backgroundColor: 'white', 
+    padding: 20, 
+    borderRadius: 15,
+    elevation: 1,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  summaryTitle: { 
+    fontWeight: 'bold', 
+    fontSize: 17,
+  },
+  summaryDate: { 
+    color: COLORS.textSecondary, 
+    fontSize: 12,
+    marginTop: 2,
+  },
+  row: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  rowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  rowLabel: {
+    fontSize: 14,
+    color: '#333',
+  },
+  rowValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+  divider: { 
+    height: 1, 
+    backgroundColor: '#f0f0f0', 
+    marginVertical: 4,
+  },
 });

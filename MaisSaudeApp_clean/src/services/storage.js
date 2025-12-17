@@ -1,6 +1,6 @@
 import { storage } from '@/firebase/config';
 import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export async function uploadBlob(path, blob, onProgress) {
   const storageRef = ref(storage, path);
