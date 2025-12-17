@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ActivityIndicator, Alert, ScrollView, ActionSheetIOS, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../../constants/theme';
-import { getProfile, saveProfile } from '../../storage/profileStorage';
+import { useProfile } from '../../contexts/ProfileContext';
 import { 
   requestMediaPermission, 
   pickImageFromLibrary, 
@@ -12,23 +12,16 @@ import {
 } from '../../utils/imagePicker';
 
 export default function EditProfileScreen({ navigation }) {
+  const { profile: contextProfile, updateProfile } = useProfile();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState({ name: '', photoUri: null });
 
   useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
-    try {
-      const data = await getProfile();
-      if (data) {
-        setProfile(data);
-      }
-    } catch (e) {
-      console.warn('Erro ao carregar perfil:', e);
+    // Carrega perfil do context ao montar
+    if (contextProfile) {
+      setProfile(contextProfile);
     }
-  };
+  }, [contextProfile]);
 
   const showImageOptions = () => {
     if (Platform.OS === 'ios') {
@@ -145,7 +138,8 @@ export default function EditProfileScreen({ navigation }) {
 
     setLoading(true);
     try {
-      await saveProfile(profile);
+      // Atualiza no context (que persiste automaticamente)
+      await updateProfile(profile);
       Alert.alert('Sucesso', 'Perfil salvo com sucesso!', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);

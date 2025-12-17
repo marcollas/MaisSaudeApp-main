@@ -20,6 +20,7 @@ import WorkoutDetailsScreen from './src/screens/App/WorkoutDetailsScreen';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { HealthProvider } from './src/contexts/HealthContext';
 import { WorkoutsProvider } from './src/contexts/WorkoutsContext';
+import { ProfileProvider } from './src/contexts/ProfileContext';
 
 enableScreens();
 
@@ -28,27 +29,29 @@ const Stack = createNativeStackNavigator();
 export default function App() {
 	return (
 		<AuthProvider>
-			<HealthProvider>
-				<WorkoutsProvider>
-					<NavigationContainer>
-						<Stack.Navigator screenOptions={{ headerShown: false }}>
-							<Stack.Screen name="Login" component={LoginScreen} />
-							<Stack.Screen name="Register" component={RegisterScreen} />
-							<Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-							<Stack.Screen name="MainApp" component={MainTabs} />
-							<Stack.Screen name="EditProfile" component={EditProfileScreen} />
-							<Stack.Screen name="ActivityTracker" component={ActivityTrackerScreen} />
-							<Stack.Screen name="RoutesHistory" component={RoutesHistoryScreen} />
-							<Stack.Screen name="RouteDetail" component={RouteDetailScreen} />
-							<Stack.Screen name="CreatePost" component={CreatePostScreen} />
-							<Stack.Screen name="WorkoutTracker" component={WorkoutTrackerScreen} />
-							<Stack.Screen name="WorkoutSession" component={WorkoutSessionScreen} />
-							<Stack.Screen name="StrengthWorkout" component={StrengthWorkoutScreen} />
-							<Stack.Screen name="WorkoutDetails" component={WorkoutDetailsScreen} />
-						</Stack.Navigator>
-					</NavigationContainer>
-				</WorkoutsProvider>
-			</HealthProvider>
+			<ProfileProvider>
+				<HealthProvider>
+					<WorkoutsProvider>
+						<NavigationContainer>
+							<Stack.Navigator screenOptions={{ headerShown: false }}>
+								<Stack.Screen name="Login" component={LoginScreen} />
+								<Stack.Screen name="Register" component={RegisterScreen} />
+								<Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+								<Stack.Screen name="MainApp" component={MainTabs} />
+								<Stack.Screen name="EditProfile" component={EditProfileScreen} />
+								<Stack.Screen name="ActivityTracker" component={ActivityTrackerScreen} />
+								<Stack.Screen name="RoutesHistory" component={RoutesHistoryScreen} />
+								<Stack.Screen name="RouteDetail" component={RouteDetailScreen} />
+								<Stack.Screen name="CreatePost" component={CreatePostScreen} />
+								<Stack.Screen name="WorkoutTracker" component={WorkoutTrackerScreen} />
+								<Stack.Screen name="WorkoutSession" component={WorkoutSessionScreen} />
+								<Stack.Screen name="StrengthWorkout" component={StrengthWorkoutScreen} />
+								<Stack.Screen name="WorkoutDetails" component={WorkoutDetailsScreen} />
+							</Stack.Navigator>
+						</NavigationContainer>
+					</WorkoutsProvider>
+				</HealthProvider>
+			</ProfileProvider>
 		</AuthProvider>
 	);
 }
