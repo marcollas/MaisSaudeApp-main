@@ -1,0 +1,24 @@
+## Repo-level gitignore for MaisSaudeApp workspace
+
+# Ignore Expo build/artifacts and local state
+.expo/
+.expo-shared/
+expo-log.txt
+metro.log
+
+# Ignore local project folders (keep clean copy only)
+MaisSaudeApp/
+MaisSaudeApp_clean/node_modules/
+MaisSaudeApp_clean/.expo/
+
+# Node
+node_modules/
+package-lock.json
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
