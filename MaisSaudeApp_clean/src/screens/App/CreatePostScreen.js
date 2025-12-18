@@ -10,6 +10,7 @@ import {
   saveImageToAppDir,
   deleteImageFromAppDir
 } from '../../utils/imagePicker';
+import AnimatedPressable from '../../components/AnimatedPressable';
 
 const MAX_CHARS = 280;
 
@@ -153,19 +154,19 @@ export default function CreatePostScreen({ navigation }) {
 
           {/* Botão adicionar imagem */}
           {!imageUri && (
-            <TouchableOpacity 
+            <AnimatedPressable 
               style={styles.addImageBtn} 
               onPress={pickImage}
               disabled={loading}
             >
               <Ionicons name="image-outline" size={24} color={COLORS.primary} />
               <Text style={styles.addImageText}>Adicionar imagem</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           )}
         </View>
 
         {/* Botão publicar */}
-        <TouchableOpacity 
+        <AnimatedPressable 
           style={[styles.submitBtn, (!isValid || loading) && styles.submitBtnDisabled]} 
           onPress={submit} 
           disabled={!isValid || loading}
@@ -178,7 +179,7 @@ export default function CreatePostScreen({ navigation }) {
               <Text style={styles.submitBtnText}>Publicar</Text>
             </>
           )}
-        </TouchableOpacity>
+        </AnimatedPressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );

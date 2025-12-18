@@ -1,14 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../../constants/theme';
 import { useNavigation } from '@react-navigation/native';
 import { getPosts } from '../../storage/postsStorage';
+import AnimatedFadeInUp from '../../components/AnimatedFadeInUp';
 
 export default function SocialScreen() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [filter, setFilter] = useState('all'); // all | week | month
+    const [page, setPage] = useState(1);
+    const pageSize = 6;
     const nav = useNavigation();
 
     const loadPosts = async () => {
@@ -24,11 +28,27 @@ export default function SocialScreen() {
 
     useEffect(() => {
         loadPosts();
-
-        // Recarrega quando voltar para a tela
         const unsub = nav.addListener('focus', loadPosts);
         return unsub;
     }, []);
+
+    // Derived list: filter + paginate
+    const filtered = useMemo(() => {
+        if (!Array.isArray(posts)) return [];
+        const now = Date.now();
+        const msDay = 86400000;
+        if (filter === 'week') {
+            return posts.filter(p => now - (p.createdAt || 0) <= 7 * msDay);
+        }
+        if (filter === 'month') {
+            return posts.filter(p => now - (p.createdAt || 0) <= 30 * msDay);
+        }
+        return posts;
+    }, [posts, filter]);
+
+    const displayed = useMemo(() => {
+        return filtered.slice(0, page * pageSize);
+    }, [filtered, page]);
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -54,31 +74,33 @@ export default function SocialScreen() {
         return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
     };
 
-    const renderItem = ({ item }) => (
-        <View style={styles.postCard}>
-            {/* Cabeçalho do post */}
-            <View style={styles.postHeader}>
-                {item.authorPhotoUri ? (
-                    <Image source={{ uri: item.authorPhotoUri }} style={styles.avatarSmall} />
-                ) : (
-                    <View style={[styles.avatarSmall, styles.avatarPlaceholder]}>
-                        <Ionicons name="person" size={20} color="#999" />
+    const renderItem = ({ item, index }) => (
+        <AnimatedFadeInUp delay={Math.min(index, 8) * 60}>
+            <View style={styles.postCard}>
+                {/* Cabeçalho do post */}
+                <View style={styles.postHeader}>
+                    {item.authorPhotoUri ? (
+                        <Image source={{ uri: item.authorPhotoUri }} style={styles.avatarSmall} />
+                    ) : (
+                        <View style={[styles.avatarSmall, styles.avatarPlaceholder]}>
+                            <Ionicons name="person" size={20} color="#999" />
+                        </View>
+                    )}
+                    <View style={styles.postHeaderText}>
+                        <Text style={styles.authorName}>{item.authorName || 'Usuário'}</Text>
+                        <Text style={styles.postDate}>{formatDate(item.createdAt)}</Text>
                     </View>
-                )}
-                <View style={styles.postHeaderText}>
-                    <Text style={styles.authorName}>{item.authorName || 'Usuário'}</Text>
-                    <Text style={styles.postDate}>{formatDate(item.createdAt)}</Text>
                 </View>
+
+                {/* Texto do post */}
+                {item.text ? <Text style={styles.postText}>{item.text}</Text> : null}
+
+                {/* Imagem do post */}
+                {item.imageUri ? (
+                    <Image source={{ uri: item.imageUri }} style={styles.postImage} />
+                ) : null}
             </View>
-
-            {/* Texto do post */}
-            {item.text ? <Text style={styles.postText}>{item.text}</Text> : null}
-
-            {/* Imagem do post */}
-            {item.imageUri ? (
-                <Image source={{ uri: item.imageUri }} style={styles.postImage} />
-            ) : null}
-        </View>
+        </AnimatedFadeInUp>
     );
 
     const renderEmpty = () => (
@@ -96,6 +118,50 @@ export default function SocialScreen() {
         </View>
     );
 
+    const FilterBar = () => (
+        <View style={styles.filterBar}>
+            {['all','week','month'].map(key => (
+                <TouchableOpacity
+                    key={key}
+                    style={[styles.filterBtn, filter === key && styles.filterBtnActive]}
+                    onPress={() => { setFilter(key); setPage(1); }}
+                >
+                    <Text style={[styles.filterText, filter === key && styles.filterTextActive]}>
+                        {key === 'all' ? 'Recentes' : key === 'week' ? 'Semana' : 'Mês'}
+                    </Text>
+                </TouchableOpacity>
+            ))}
+        </View>
+    );
+
+    const ListFooter = () => {
+        const hasMore = displayed.length < filtered.length;
+        if (!hasMore) return <View style={{ height: 16 }} />;
+        return (
+            <TouchableOpacity style={styles.loadMoreBtn} onPress={() => setPage(p => p + 1)}>
+                <Text style={styles.loadMoreText}>Carregar mais</Text>
+            </TouchableOpacity>
+        );
+    };
+
+    const SkeletonList = () => (
+        <View style={{ padding: SIZES.padding }}>
+            {Array.from({ length: 3 }).map((_, i) => (
+                <View key={i} style={styles.skeletonCard}>
+                    <View style={styles.skeletonHeaderRow}>
+                        <View style={styles.skeletonAvatar} />
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                            <View style={styles.skeletonLine} />
+                            <View style={[styles.skeletonLine, { width: '40%', marginTop: 6 }]} />
+                        </View>
+                    </View>
+                    <View style={[styles.skeletonLine, { width: '90%', marginTop: 12 }]} />
+                    <View style={[styles.skeletonLine, { width: '70%', marginTop: 8 }]} />
+                </View>
+            ))}
+        </View>
+    );
+
     return (
         <View style={styles.container}>
             {/* Header */}
@@ -109,21 +175,22 @@ export default function SocialScreen() {
                 </TouchableOpacity>
             </View>
 
+            <FilterBar />
+
             {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
-                </View>
+                <SkeletonList />
             ) : (
-                <FlatList 
-                    data={posts} 
-                    keyExtractor={p => p.id} 
+                <FlatList
+                    data={displayed}
+                    keyExtractor={p => p.id}
                     renderItem={renderItem}
                     ListEmptyComponent={renderEmpty}
+                    ListFooterComponent={ListFooter}
                     contentContainerStyle={styles.listContent}
                     refreshControl={
-                        <RefreshControl 
-                            refreshing={refreshing} 
-                            onRefresh={onRefresh}
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={() => { setPage(1); onRefresh(); }}
                             colors={[COLORS.primary]}
                         />
                     }
@@ -164,15 +231,30 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     listContent: {
         padding: SIZES.padding,
         paddingTop: 8,
     },
+    filterBar: {
+        flexDirection: 'row',
+        paddingHorizontal: SIZES.padding,
+        gap: 8,
+        marginBottom: 8,
+    },
+    filterBtn: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 16,
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#eee',
+    },
+    filterBtnActive: {
+        backgroundColor: '#e3f2fd',
+        borderColor: '#bbdefb',
+    },
+    filterText: { color: '#666', fontWeight: '600', fontSize: 12 },
+    filterTextActive: { color: COLORS.primary },
     postCard: {
         backgroundColor: 'white',
         borderRadius: 16,
@@ -184,6 +266,18 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
     },
+    loadMoreBtn: {
+        alignSelf: 'center',
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#eee',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        marginTop: 8,
+        marginBottom: 16,
+    },
+    loadMoreText: { fontWeight: '600', color: '#333' },
     postHeader: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -259,4 +353,13 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 15,
     },
+    skeletonCard: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+    },
+    skeletonHeaderRow: { flexDirection: 'row', alignItems: 'center' },
+    skeletonAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#eee' },
+    skeletonLine: { height: 12, backgroundColor: '#eee', borderRadius: 6 },
 });

@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, isFirebaseConfigured } from '@/firebase/config';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'firebase/auth';
+import { syncPostsRemote } from '../repositories/postsRepo';
+import { syncHealthRemote } from '../repositories/healthRepo';
+import { syncWorkoutsRemote } from '../repositories/workoutsRepo';
 
 const AuthContext = createContext({});
 
@@ -17,6 +20,14 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
+      
+      // Sync quando usuário logar
+      if (u) {
+        console.log('User logged in, syncing...');
+        syncPostsRemote(u).catch(console.warn);
+        syncHealthRemote(u).catch(console.warn);
+        syncWorkoutsRemote(u).catch(console.warn);
+      }
     });
     return unsubscribe;
   }, []);

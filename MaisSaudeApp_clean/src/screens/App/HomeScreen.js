@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import * as VectorIcons from '@expo/vector-icons';
 import { COLORS, SIZES } from '../../constants/theme';
 import { useProfile } from '../../contexts/ProfileContext';
@@ -8,14 +8,16 @@ import { formatSleepTime, formatNumber, formatSleepGoal } from '../../utils/date
 import { calculateProgress } from '../../models/healthModels';
 import AddMetricModal from '../../components/AddMetricModal';
 import MetricCard, { MetricCardSkeleton } from '../../components/MetricCard';
+import AnimatedFadeInUp from '../../components/AnimatedFadeInUp';
+import AnimatedPressable from '../../components/AnimatedPressable';
 
 const ActivityButton = ({ label, icon, onPress }) => (
-    <TouchableOpacity style={styles.activityBtn} onPress={onPress}>
-        <View style={styles.iconCircle}>
-        <VectorIcons.MaterialCommunityIcons name={icon} size={24} color={COLORS.textPrimary} />
-      </View>
-        <Text style={styles.activityText}>{label}</Text>
-    </TouchableOpacity>
+  <AnimatedPressable style={styles.activityBtn} onPress={onPress}>
+    <View style={styles.iconCircle}>
+      <VectorIcons.MaterialCommunityIcons name={icon} size={24} color={COLORS.textPrimary} />
+    </View>
+    <Text style={styles.activityText}>{label}</Text>
+  </AnimatedPressable>
 );
 
 export default function HomeScreen({ navigation }) {
@@ -77,7 +79,7 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={{paddingBottom: 100, paddingHorizontal: SIZES.padding}}>
-        <View style={styles.profileSummary}>
+        <AnimatedFadeInUp delay={0} style={styles.profileSummary}>
           {/* Avatar do perfil */}
           {profile?.photoUri ? (
             <Image 
@@ -97,43 +99,49 @@ export default function HomeScreen({ navigation }) {
           </View>
           
           <VectorIcons.MaterialCommunityIcons name="heart-pulse" size={50} color="#4DB6AC"/>
-        </View>
+        </AnimatedFadeInUp>
 
         <View style={styles.activitiesRow}>
             <ActivityButton label="Caminhada" icon="walk" onPress={() => navigation.navigate('ActivityTracker')} />
             <ActivityButton label="Corrida" icon="run" onPress={() => {}} />
             <ActivityButton label="Ciclismo" icon="bike" onPress={() => {}} />
-            <ActivityButton label="Mais" icon="menu" onPress={() => {}} />
+            <ActivityButton label="Mais" icon="menu" onPress={() => navigation.navigate('ExerciseSearch')} />
         </View>
 
         <View style={styles.statsContainer}>
-          <MetricCard
-            title="Calorias"
-            icon="food-apple"
-            valueText={`${formatNumber(daily.calories)} kcal`}
-            goalText={`Meta ${formatNumber(goals.caloriesGoal)} kcal`}
-            progress={caloriesProgress}
-            color={COLORS.primary}
-            onPress={() => openModal('calories')}
-          />
-          <MetricCard
-            title="Sono"
-            icon="bed-clock"
-            valueText={formatSleepTime(daily.sleepMin)}
-            goalText={`Meta ${formatSleepGoal(goals.sleepGoalMin)}`}
-            progress={sleepProgress}
-            color="#6C63FF"
-            onPress={() => openModal('sleep')}
-          />
-          <MetricCard
-            title="Água"
-            icon="water"
-            valueText={`${formatNumber(daily.waterMl)} mL`}
-            goalText={`Meta ${formatNumber(goals.waterGoalMl)} mL`}
-            progress={waterProgress}
-            color="#2196F3"
-            onPress={() => openModal('water')}
-          />
+          <AnimatedFadeInUp delay={0}>
+            <MetricCard
+              title="Calorias"
+              icon="food-apple"
+              valueText={`${formatNumber(daily.calories)} kcal`}
+              goalText={`Meta ${formatNumber(goals.caloriesGoal)} kcal`}
+              progress={caloriesProgress}
+              color={COLORS.primary}
+              onPress={() => openModal('calories')}
+            />
+          </AnimatedFadeInUp>
+          <AnimatedFadeInUp delay={60}>
+            <MetricCard
+              title="Sono"
+              icon="bed-clock"
+              valueText={formatSleepTime(daily.sleepMin)}
+              goalText={`Meta ${formatSleepGoal(goals.sleepGoalMin)}`}
+              progress={sleepProgress}
+              color="#6C63FF"
+              onPress={() => openModal('sleep')}
+            />
+          </AnimatedFadeInUp>
+          <AnimatedFadeInUp delay={120}>
+            <MetricCard
+              title="Água"
+              icon="water"
+              valueText={`${formatNumber(daily.waterMl)} mL`}
+              goalText={`Meta ${formatNumber(goals.waterGoalMl)} mL`}
+              progress={waterProgress}
+              color="#2196F3"
+              onPress={() => openModal('water')}
+            />
+          </AnimatedFadeInUp>
         </View>
       </ScrollView>
 

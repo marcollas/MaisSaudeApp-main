@@ -10,6 +10,7 @@ import {
   takePictureWithCamera,
   deleteImageFromAppDir
 } from '../../utils/imagePicker';
+import AnimatedPressable from '../../components/AnimatedPressable';
 
 export default function EditProfileScreen({ navigation }) {
   const { profile: contextProfile, updateProfile } = useProfile();
@@ -154,9 +155,9 @@ export default function EditProfileScreen({ navigation }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <AnimatedPressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
+        </AnimatedPressable>
         <Text style={styles.header}>Editar perfil</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -164,11 +165,10 @@ export default function EditProfileScreen({ navigation }) {
       <View style={styles.formCard}>
         {/* Avatar com loading overlay */}
         <View style={styles.avatarSection}>
-          <TouchableOpacity 
+          <AnimatedPressable 
             onPress={showImageOptions} 
             style={styles.avatarContainer}
             disabled={loading}
-            activeOpacity={0.7}
           >
             {profile.photoUri ? (
               <Image source={{ uri: profile.photoUri }} style={styles.avatar} />
@@ -187,7 +187,7 @@ export default function EditProfileScreen({ navigation }) {
             <View style={styles.cameraIcon}>
               <Ionicons name="camera" size={20} color="white" />
             </View>
-          </TouchableOpacity>
+          </AnimatedPressable>
           <Text style={styles.photoHint}>Toque para alterar foto</Text>
         </View>
 
@@ -205,7 +205,7 @@ export default function EditProfileScreen({ navigation }) {
         </View>
 
         {/* Botão Salvar */}
-        <TouchableOpacity 
+        <AnimatedPressable 
           style={[styles.saveBtn, loading && styles.saveBtnDisabled]} 
           onPress={onSave} 
           disabled={loading}
@@ -218,7 +218,7 @@ export default function EditProfileScreen({ navigation }) {
               <Text style={styles.saveBtnText}>Salvar alterações</Text>
             </>
           )}
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
     </ScrollView>
   );

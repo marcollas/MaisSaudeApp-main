@@ -4,6 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../../constants/theme';
 import { useNavigation } from '@react-navigation/native';
 import { getProfile } from '../../storage/profileStorage';
+import AnimatedFadeInUp from '../../components/AnimatedFadeInUp';
+import AnimatedPressable from '../../components/AnimatedPressable';
+import AnimatedAccordion from '../../components/AnimatedAccordion';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -44,74 +47,77 @@ export default function ProfileScreen() {
       <Text style={styles.header}>Meu perfil</Text>
 
       {/* Card do Perfil - Melhorado */}
-      <View style={styles.profileCard}>
-        <TouchableOpacity 
-          style={styles.avatarContainer}
-          onPress={() => navigation.navigate('EditProfile')}
-          activeOpacity={0.7}
-        >
-          {profile?.photoUri ? (
-            <Image source={{ uri: profile.photoUri }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Ionicons name="person" size={48} color="#999" />
+      <AnimatedFadeInUp delay={0}>
+        <View style={styles.profileCard}>
+          <AnimatedPressable 
+            style={styles.avatarContainer}
+            onPress={() => navigation.navigate('EditProfile')}
+          >
+            {profile?.photoUri ? (
+              <Image source={{ uri: profile.photoUri }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                <Ionicons name="person" size={48} color="#999" />
+              </View>
+            )}
+            <View style={styles.editIconBadge}>
+              <Ionicons name="camera" size={16} color="white" />
             </View>
-          )}
-          <View style={styles.editIconBadge}>
-            <Ionicons name="camera" size={16} color="white" />
-          </View>
-        </TouchableOpacity>
-        
-        <Text style={styles.name}>{profile?.name || 'Usuário'}</Text>
-        <Text style={styles.hint}>Toque na foto para editar perfil</Text>
-        
-        <TouchableOpacity 
-          style={styles.editBtn} 
-          onPress={() => navigation.navigate('EditProfile')}
-        >
-          <Ionicons name="pencil" size={14} color="#666" />
-          <Text style={styles.editBtnText}>Editar</Text>
-        </TouchableOpacity>
-      </View>
+          </AnimatedPressable>
+          
+          <Text style={styles.name}>{profile?.name || 'Usuário'}</Text>
+          <Text style={styles.hint}>Toque na foto para editar perfil</Text>
+          
+          <AnimatedPressable 
+            style={styles.editBtn} 
+            onPress={() => navigation.navigate('EditProfile')}
+          >
+            <Ionicons name="pencil" size={14} color="#666" />
+            <Text style={styles.editBtnText}>Editar</Text>
+          </AnimatedPressable>
+        </View>
+      </AnimatedFadeInUp>
 
       {/* Conquistas - Estado vazio melhorado */}
-      <View style={styles.menuItem}>
-        <Text style={styles.menuTitle}>Conquistas</Text>
-        <View style={styles.emptyState}>
-          <Ionicons name="trophy-outline" size={32} color="#ccc" />
-          <Text style={styles.emptyText}>Nenhuma conquista ainda</Text>
-          <Text style={styles.emptyHint}>Complete desafios para ganhar troféus</Text>
+      <AnimatedFadeInUp delay={80}>
+        <View style={styles.menuItem}>
+          <Text style={styles.menuTitle}>Conquistas</Text>
+          <View style={styles.emptyState}>
+            <Ionicons name="trophy-outline" size={32} color="#ccc" />
+            <Text style={styles.emptyText}>Nenhuma conquista ainda</Text>
+            <Text style={styles.emptyHint}>Complete desafios para ganhar troféus</Text>
+          </View>
         </View>
-      </View>
+      </AnimatedFadeInUp>
 
       {/* Resumo Semanal */}
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryHeader}>
-          <View>
-            <Text style={styles.summaryTitle}>Resumo semanal</Text>
-            <Text style={styles.summaryDate}>17 - 23 de dezembro</Text>
+      <AnimatedFadeInUp delay={140}>
+        <AnimatedAccordion title="Resumo semanal" defaultOpen>
+          <View style={styles.summaryHeader}>
+            <View>
+              <Text style={styles.summaryDate}>17 - 23 de dezembro</Text>
+            </View>
           </View>
-          <Ionicons name="calendar-outline" size={24} color={COLORS.primary} />
-        </View>
 
-        <View style={styles.row}>
-          <View style={styles.rowLeft}>
-            <Ionicons name="time-outline" size={20} color={COLORS.primary} />
-            <Text style={styles.rowLabel}>Tempo ativo médio</Text>
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="time-outline" size={20} color={COLORS.primary} />
+              <Text style={styles.rowLabel}>Tempo ativo médio</Text>
+            </View>
+            <Text style={styles.rowValue}>48min</Text>
           </View>
-          <Text style={styles.rowValue}>48min</Text>
-        </View>
-        
-        <View style={styles.divider} />
-        
-        <View style={styles.row}>
-          <View style={styles.rowLeft}>
-            <Ionicons name="moon-outline" size={20} color={COLORS.primary} />
-            <Text style={styles.rowLabel}>Média de sono</Text>
+          
+          <View style={styles.divider} />
+          
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="moon-outline" size={20} color={COLORS.primary} />
+              <Text style={styles.rowLabel}>Média de sono</Text>
+            </View>
+            <Text style={styles.rowValue}>8h</Text>
           </View>
-          <Text style={styles.rowValue}>8h</Text>
-        </View>
-      </View>
+        </AnimatedAccordion>
+      </AnimatedFadeInUp>
     </ScrollView>
   );
 }

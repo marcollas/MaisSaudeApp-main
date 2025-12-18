@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
 import * as VectorIcons from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -7,6 +7,7 @@ import { useWorkouts } from '../../contexts/WorkoutsContext';
 import WorkoutStartCard from '../../components/WorkoutStartCard';
 import WorkoutListItem from '../../components/WorkoutListItem';
 import { formatDuration, formatDistance } from '../../models/workoutModels';
+import AnimatedFadeInUp from '../../components/AnimatedFadeInUp';
 
 export default function WorkoutsScreen() {
   const { workouts, isLoading, getWeeklySummary } = useWorkouts();
@@ -149,12 +150,13 @@ export default function WorkoutsScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          recentWorkouts.map(workout => (
-            <WorkoutListItem
-              key={workout.id}
-              workout={workout}
-              onPress={() => handleWorkoutPress(workout)}
-            />
+          recentWorkouts.map((workout, index) => (
+            <AnimatedFadeInUp key={workout.id} delay={Math.min(index, 8) * 60}>
+              <WorkoutListItem
+                workout={workout}
+                onPress={() => handleWorkoutPress(workout)}
+              />
+            </AnimatedFadeInUp>
           ))
         )}
         

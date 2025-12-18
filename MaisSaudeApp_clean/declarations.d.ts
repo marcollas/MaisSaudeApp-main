@@ -1,4 +1,3 @@
-declare module 'expo-router';
 declare module 'expo-web-browser';
 declare module 'react/jsx-runtime';
 declare module 'react-native-reanimated';
